@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Machine List</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding-top: 20px;
+        }
+        .blink {
+            color: red;
+            font-weight: bold;
+            animation: blink 1s step-start 0s infinite;
+        }
+        @keyframes blink {
+            50% { opacity: 0; }
+        }
+        button {
+            margin: 10px;
+            padding: 12px 24px;
+            font-size: 16px;
+            cursor: pointer;
+            border: none;
+            border-radius: 5px;
+        }
+        .logo {
+            height: 60px;
+            margin-left: 10px;
+        }
+        .complaint-btn {
+            background-color: red;
+            color: white;
+            display: block;
+            margin: 10px auto;
+            font-weight: bold;
+        }
+        .complaint-btn.green {
+            background-color: green !important;
+            cursor: not-allowed;
+        }
+        .complaint-details {
+            width: 90%;
+            margin: 0 auto 20px auto;
+            text-align: left;
+            background-color: #f9f9f9;
+            border: 1px solid black;
+            padding: 10px;
+        }
+        .logout {
+            display: block;
+            margin-top: 20px;
+            color: blue;
+        }
+    </style>
+</head>
+<body>
+    
+    <img src="nttf_logo.png" alt="NTTF Logo" class="logo">
+    <h2>MACHINE LISTS</h2>
+    <form>
+        <button type="button" onclick="window.location.href='VTC_IM_001.html'">VTC/IM/001</button>
+        <button type="button" onclick="window.location.href='VTC_HP_001.html'">VTC/HP/001</button>
+    </form>
+    <h3 id="blinkHeader" style="display:none;" class="blink">BREAKDOWN MAINTENANCE COMPLAINT</h3>
+    <div id="complaints"></div>
+    <a href="index.html" class="logout">Logout</a>
+
+
+    <script>
+        let complaints = JSON.parse(localStorage.getItem("maintenanceData") || "[]");
+
+        function loadComplaints() {
+            const container = document.getElementById("complaints");
+            const header = document.getElementById("blinkHeader");
+            container.innerHTML = "";
+
+            const activeComplaints = [];
+            complaints.forEach((c, i) => {
+                if (c.sent && !c.okayed) {
+                    activeComplaints.push({ ...c, originalIndex: i });
+                }
+            });
+
+            if (activeComplaints.length > 0) {
+                header.style.display = "block";
+            } else {
+                header.style.display = "none";
+            }
+
+            activeComplaints.forEach((data, displayIndex) => {
+                const btn = document.createElement("button");
+                btn.className = "complaint-btn";
+                btn.textContent = `Complaint ${displayIndex + 1}`;
+                btn.onclick = () => document.getElementById(`details${displayIndex}`).scrollIntoView({ behavior: "smooth" });
+
+                if (data.finished) {
+                    btn.classList.add("green");
+                    btn.disabled = true;
+                }
+
+                container.appendChild(btn);
+
+                const div = document.createElement("div");
+                div.className = "complaint-details";
+                div.id = `details${displayIndex}`;
+                div.innerHTML = `
+                    <strong>Date:</strong> ${data.status01}<br>
+                    <strong>Owner:</strong> ${data.status02}<br>
+                    <strong>Machine No:</strong> ${data.status03}<br>
+                    <strong>Section:</strong> ${data.remarks04}<br>
+                    <strong>Defect:</strong> ${data.status05}<br><br>
+                    <button onclick="finishComplaint(${data.originalIndex})" ${data.finished ? "disabled" : ""}>FINISH</button>
+                `;
+                container.appendChild(div);
+            });
+
+        }
+
+        function finishComplaint(index) {
+            complaints[index].finished = true;
+            localStorage.setItem("maintenanceData", JSON.stringify(complaints));
+            loadComplaints();
+        }
+
+        window.onload = loadComplaints;
+    </script>
+</body>
+</html>
